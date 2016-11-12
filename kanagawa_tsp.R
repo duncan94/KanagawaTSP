@@ -1,3 +1,4 @@
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(GA)
 library(ggmap)
 
@@ -18,15 +19,20 @@ citynames <- c("Yokohama, Kanagawa, Japan", "Kawasaki, Kanagawa, Japan",
 
 
 #Calc Dist
-D <- matrix(0, nrow=length(citynames), ncol=length(citynames))
-for(i in 1:length(citynames)) {
-  for(j in i:length(citynames)) {
-    D[i, j] = mapdist(citynames[i], citynames[j])$km
+calc_dist <- function(citynames) {
+  D <- matrix(0, nrow=length(citynames), ncol=length(citynames))
+  for(i in 1:length(citynames)) {
+    for(j in i:length(citynames)) {
+      D[i, j] = mapdist(citynames[i], citynames[j])$km
+    }
+    for(j in 1:i) {
+      D[i, j] = D[j, i]
+    }
   }
-  for(j in 1:i) {
-    D[i, j] = D[j, i]
-  }
+  return(D)
 }
+
+D <- calc_dist(citynames)
 
 
 #Fitness Function
@@ -52,13 +58,12 @@ solution <- GA@solution[1, ]
 
 
 #GoogleMap Plot
-solution_lonlat <- geocode(citynames[solution])
-lon <- append(solution_lonlat$lon, solution_lonlat$lon[1])
-lat <- append(solution_lonlat$lat, solution_lonlat$lat[1])
-solution_lonlat <- list(lon=lon, lat=lat)
-
-
-solution_plot <- function(sol) {
+solution_plot <- function(citynames, solution) {
+  solution_lonlat <- geocode(citynames[solution])
+  lon <- append(solution_lonlat$lon, solution_lonlat$lon[1])
+  lat <- append(solution_lonlat$lat, solution_lonlat$lat[1])
+  solution_lonlat <- list(lon=lon, lat=lat)
+  
   map <- qmap("Atsugi, Kanagawa, Japan", zoom=10)
   
   for(i in 2:length(solution_lonlat$lon)) {
@@ -89,4 +94,4 @@ solution_plot <- function(sol) {
   map
 }
 
-solution_plot(solution)
+solution_plot(citynames, solution)
